@@ -4,12 +4,9 @@ from fastapi import FastAPI, Depends, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
-from tornado.escape import json_encode
 
 from app.api.v1.api import api_router
 from app.config import get_settings
-from app.database import engine, get_db
 from app.models.event import Event
 
 settings = get_settings()
