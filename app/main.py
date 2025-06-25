@@ -4,9 +4,7 @@ from fastapi import FastAPI, Depends, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
 from sqlalchemy.orm import Session
-from starlette.websockets import WebSocketDisconnect
 from tornado.escape import json_encode
 
 from app.api.v1.api import api_router
@@ -15,26 +13,6 @@ from app.database import engine, get_db
 from app.models.event import Event
 
 settings = get_settings()
-
-def check_database_connection():
-    """
-    Check database connection before starting the server.
-    """
-    try:
-        # Create a new session
-        session = Session(engine)
-        # Try to execute a simple query
-        session.execute(text("SELECT 1"))
-        session.close()
-        print("✅ Database connection successful")
-        return True
-    except Exception as e:
-        print(f"❌ Database connection failed: {str(e)}")
-        return False
-
-def event_table_last_index(db: Session = Depends(get_db)):
-    return db.query(Event).order_by(Event.id.desc()).first()
-
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API for Tarrawonga Story Board application",
@@ -76,26 +54,3 @@ async def serve_react_app(full_path: str):
 async def root():
     return {"message": "Welcome to Tarrawonga Story Board API"}
 
-@app.websocket("/ws/truck")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_text("connected-from server")
-    try:
-        while True:
-            text = await websocket.receive_text()
-            print(text)
-            # Session = Depends(get_db)
-            # data = list_dump(Session)
-            await websocket.send_text(json_encode(text))
-    except WebSocketDisconnect:
-        print("Client disconnected")
-    except Exception as e:
-        print(e)
-
-if __name__ == "__main__":
-    import uvicorn
-    # Check database connection before starting the server
-    if check_database_connection():
-        uvicorn.run("main:app", host="192.168.131.177", port=8000, reload=True)
-    else:
-        print("Server startup aborted due to database connection failure")
